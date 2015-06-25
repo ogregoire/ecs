@@ -14,7 +14,7 @@ import java.lang.annotation.Target;
  *
  * @author Olivier Grégoire
  */
-@Target({ElementType.FIELD, ElementType.TYPE})
+@Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Inject {
 

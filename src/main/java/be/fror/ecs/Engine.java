@@ -5,15 +5,15 @@
  */
 package be.fror.ecs;
 
-
-import static java.util.Objects.*;
+import static java.util.Objects.requireNonNull;
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.toMap;
 
 import com.google.common.collect.ImmutableClassToInstanceMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.MutableClassToInstanceMap;
 
 import java.lang.reflect.Field;
-import java.util.HashMap;
+import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -23,42 +23,36 @@ import java.util.Map;
 public final class Engine {
 
   private final ImmutableSet<EntityManager> managers;
-  private final ImmutableSet<EntitySystem> systems;
+  private final ImmutableSet<EntityProcessor> processors;
   private final Injector injector;
 
   private Engine(Builder builder) {
     managers = builder.managers.build();
-    systems = builder.systems.build();
+    processors = builder.processors.build();
     injector = new Injector();
-    managers.forEach((manager) -> {
-      injector.inject(manager);
-      manager.initialize();
-    });
-    systems.forEach((system) -> {
-      injector.inject(system);
-    });
+    managers.forEach(injector::inject);
+    managers.forEach(EntityManager::initialize);
+    processors.forEach(injector::inject);
   }
 
   public void process() {
-    systems.forEach((system) -> {
-      system.doProcess();
-    });
+    processors.forEach(EntityProcessor::doProcess);
   }
 
   public static class Builder {
 
     private final ImmutableSet.Builder<EntityManager> managers = ImmutableSet.builder();
-    private final ImmutableSet.Builder<EntitySystem> systems = ImmutableSet.builder();
+    private final ImmutableSet.Builder<EntityProcessor> processors = ImmutableSet.builder();
 
-    public Builder addManager(EntityManager manager) {
+    public Builder add(EntityManager manager) {
       requireNonNull(manager, "manager must not be null");
       managers.add(manager);
       return this;
     }
 
-    public Builder addSystem(EntitySystem system) {
-      requireNonNull(system, "system must not be null");
-      systems.add(system);
+    public Builder add(EntityProcessor system) {
+      requireNonNull(system, "processor must not be null");
+      processors.add(system);
       return this;
     }
 
@@ -70,36 +64,28 @@ public final class Engine {
   final class Injector {
 
     final ImmutableClassToInstanceMap<Object> injectables;
-    
+
     Injector() {
-      MutableClassToInstanceMap<Object> map = MutableClassToInstanceMap.create();
-      managers.forEach(o-> map.put(o.getClass(), o));
-      systems.forEach(o-> map.put(o.getClass(), o));
-      map.put(Engine.class, Engine.this);
-      injectables = ImmutableClassToInstanceMap.copyOf(map);
+      injectables = ImmutableClassToInstanceMap.builder()
+          .putAll(toClassToInstanceMap(managers))
+          .putAll(toClassToInstanceMap(processors))
+          .put(Engine.class, Engine.this)
+          .build();
+    }
+    
+    private <T> Map<? extends Class<? extends Object>,? extends Object> toClassToInstanceMap(Collection<T> collection) {
+      return collection.stream().collect(toMap(Object::getClass, identity()));
     }
 
     void inject(Object injectee) {
-      if (injectee.getClass().isAnnotationPresent(Inject.class)) {
-        for (Class<?> type = injectee.getClass(); type != Object.class; type = type.getSuperclass()) {
-          for (Field field : type.getDeclaredFields()) {
-            tryInject(injectee, field);
-          }
-        }
-      } else {
-        for (Class<?> type = injectee.getClass(); type != Object.class; type = type.getSuperclass()) {
-          for (Field field : type.getDeclaredFields()) {
-            if (field.isAnnotationPresent(Inject.class)) {
-              tryInject(injectee, field);
-            }
-          }
-        }
-      }
+      Reflection.classParents(injectee.getClass())
+          .flatMap(Reflection::getDeclaredFields)
+          .filter(Reflection.isAnnotationPresent(Inject.class))
+          .forEach(FunctionalBind.bindFirst(this::tryInject, injectee));
     }
 
     private void tryInject(Object injectee, Field field) {
-      Class<?> fieldType = field.getType();
-      Object injectable = injectables.get(fieldType);
+      Object injectable = injectables.get(field.getType());
       if (injectable != null) {
         try {
           field.setAccessible(true);
