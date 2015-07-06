@@ -15,17 +15,30 @@
  */
 package be.fror.ecs;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
 /**
  *
  * @author Olivier Grégoire
  */
-@Target(ElementType.FIELD)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface Inject {
+public abstract class Processor {
 
+  @Inject
+  private Engine engine;
+
+  protected final Engine getEngine() {
+    return engine;
+  }
+
+  final void doProcess() {
+    beforeProcess();
+    process();
+    afterProcess();
+  }
+
+  protected void beforeProcess() {
+  }
+
+  protected abstract void process();
+
+  protected void afterProcess() {
+  }
 }

@@ -13,19 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package be.fror.ecs;
+package be.fror.ecs.tool;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 /**
  *
  * @author Olivier Grégoire
  */
-@Target(ElementType.FIELD)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface Inject {
+public class FunctionalBind {
 
+  private FunctionalBind() {
+  }
+
+  public static <A, B> Consumer<A> bindLast(BiConsumer<A, B> fn, B b) {
+    return a -> fn.accept(a, b);
+  }
+
+  public static <A, B> Consumer<B> bindFirst(BiConsumer<A, B> fn, A a) {
+    return b -> fn.accept(a, b);
+  }
 }

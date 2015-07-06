@@ -1,9 +1,22 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * Copyright 2015 Olivier Grégoire.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package be.fror.ecs;
+
+import be.fror.ecs.tool.Reflection;
+import be.fror.ecs.tool.FunctionalBind;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.function.Function.identity;
@@ -22,8 +35,8 @@ import java.util.Map;
  */
 public final class Engine {
 
-  private final ImmutableSet<EntityManager> managers;
-  private final ImmutableSet<EntityProcessor> processors;
+  private final ImmutableSet<Manager> managers;
+  private final ImmutableSet<Processor> processors;
   private final Injector injector;
 
   private Engine(Builder builder) {
@@ -31,26 +44,26 @@ public final class Engine {
     processors = builder.processors.build();
     injector = new Injector();
     managers.forEach(injector::inject);
-    managers.forEach(EntityManager::initialize);
+    managers.forEach(Manager::initialize);
     processors.forEach(injector::inject);
   }
 
   public void process() {
-    processors.forEach(EntityProcessor::doProcess);
+    processors.forEach(Processor::doProcess);
   }
 
   public static class Builder {
 
-    private final ImmutableSet.Builder<EntityManager> managers = ImmutableSet.builder();
-    private final ImmutableSet.Builder<EntityProcessor> processors = ImmutableSet.builder();
+    private final ImmutableSet.Builder<Manager> managers = ImmutableSet.builder();
+    private final ImmutableSet.Builder<Processor> processors = ImmutableSet.builder();
 
-    public Builder add(EntityManager manager) {
+    public Builder add(Manager manager) {
       requireNonNull(manager, "manager must not be null");
       managers.add(manager);
       return this;
     }
 
-    public Builder add(EntityProcessor system) {
+    public Builder add(Processor system) {
       requireNonNull(system, "processor must not be null");
       processors.add(system);
       return this;
@@ -72,13 +85,13 @@ public final class Engine {
           .put(Engine.class, Engine.this)
           .build();
     }
-    
-    private <T> Map<? extends Class<? extends Object>,? extends Object> toClassToInstanceMap(Collection<T> collection) {
+
+    private <T> Map<? extends Class<? extends Object>, ? extends Object> toClassToInstanceMap(Collection<T> collection) {
       return collection.stream().collect(toMap(Object::getClass, identity()));
     }
 
     void inject(Object injectee) {
-      Reflection.classParents(injectee.getClass())
+      Reflection.lineage(injectee.getClass())
           .flatMap(Reflection::getDeclaredFields)
           .filter(Reflection.isAnnotationPresent(Inject.class))
           .forEach(FunctionalBind.bindFirst(this::tryInject, injectee));
