@@ -15,12 +15,12 @@
  */
 package be.fror.ecs;
 
-import be.fror.ecs.tool.Reflection;
-import be.fror.ecs.tool.FunctionalBind;
-
 import static java.util.Objects.requireNonNull;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
+
+import be.fror.ecs.tool.FunctionalBind;
+import be.fror.ecs.tool.Reflection;
 
 import com.google.common.collect.ImmutableClassToInstanceMap;
 import com.google.common.collect.ImmutableSet;
@@ -43,6 +43,7 @@ public final class Engine {
     managers = builder.managers.build();
     processors = builder.processors.build();
     injector = new Injector();
+    
     managers.forEach(injector::inject);
     managers.forEach(Manager::initialize);
     processors.forEach(injector::inject);
@@ -106,6 +107,8 @@ public final class Engine {
         } catch (IllegalArgumentException | IllegalAccessException ex) {
           throw new RuntimeException(ex);
         }
+      } else {
+        throw new RuntimeException("No injectable element defined for field " + field);
       }
     }
   }
