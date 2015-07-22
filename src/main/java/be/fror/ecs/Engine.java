@@ -15,19 +15,7 @@
  */
 package be.fror.ecs;
 
-import static java.util.Objects.requireNonNull;
-import static java.util.function.Function.identity;
-import static java.util.stream.Collectors.toMap;
-
-import be.fror.ecs.tool.FunctionalBind;
-import be.fror.ecs.tool.Reflection;
-
-import com.google.common.collect.ImmutableClassToInstanceMap;
-import com.google.common.collect.ImmutableSet;
-
-import java.lang.reflect.Field;
-import java.util.Collection;
-import java.util.Map;
+import java.util.Arrays;
 
 /**
  *
@@ -35,81 +23,35 @@ import java.util.Map;
  */
 public final class Engine {
 
-  private final ImmutableSet<Manager> managers;
-  private final ImmutableSet<Processor> processors;
-  private final Injector injector;
+  final Component[][] components;
 
-  private Engine(Builder builder) {
-    managers = builder.managers.build();
-    processors = builder.processors.build();
-    injector = new Injector();
-    
-    managers.forEach(injector::inject);
-    managers.forEach(Manager::initialize);
-    processors.forEach(injector::inject);
+  Engine(Builder builder) {
+    components = new Component[10][32];
   }
 
   public void process() {
-    processors.forEach(Processor::doProcess);
+  }
+
+  void setComponent(int componentId, int entityId, Component component) {
+    Component[] comps = components[componentId];
+    if (comps.length <= entityId) {
+      components[componentId] = comps = Arrays.copyOf(comps, Integer.highestOneBit(entityId) << 1);
+    }
+    comps[entityId] = component;
   }
 
   public static class Builder {
 
-    private final ImmutableSet.Builder<Manager> managers = ImmutableSet.builder();
-    private final ImmutableSet.Builder<Processor> processors = ImmutableSet.builder();
-
-    public Builder add(Manager manager) {
-      requireNonNull(manager, "manager must not be null");
-      managers.add(manager);
+    public Builder addProcessor(Processor system) {
       return this;
     }
 
-    public Builder add(Processor system) {
-      requireNonNull(system, "processor must not be null");
-      processors.add(system);
+    public Builder addTool(Object injectable) {
       return this;
     }
 
     public Engine build() {
       return new Engine(this);
-    }
-  }
-
-  final class Injector {
-
-    final ImmutableClassToInstanceMap<Object> injectables;
-
-    Injector() {
-      injectables = ImmutableClassToInstanceMap.builder()
-          .putAll(toClassToInstanceMap(managers))
-          .putAll(toClassToInstanceMap(processors))
-          .put(Engine.class, Engine.this)
-          .build();
-    }
-
-    private <T> Map<? extends Class<? extends Object>, ? extends Object> toClassToInstanceMap(Collection<T> collection) {
-      return collection.stream().collect(toMap(Object::getClass, identity()));
-    }
-
-    void inject(Object injectee) {
-      Reflection.lineage(injectee.getClass())
-          .flatMap(Reflection::getDeclaredFields)
-          .filter(Reflection.isAnnotationPresent(Inject.class))
-          .forEach(FunctionalBind.bindFirst(this::tryInject, injectee));
-    }
-
-    private void tryInject(Object injectee, Field field) {
-      Object injectable = injectables.get(field.getType());
-      if (injectable != null) {
-        try {
-          field.setAccessible(true);
-          field.set(injectee, injectable);
-        } catch (IllegalArgumentException | IllegalAccessException ex) {
-          throw new RuntimeException(ex);
-        }
-      } else {
-        throw new RuntimeException("No injectable element defined for field " + field);
-      }
     }
   }
 }

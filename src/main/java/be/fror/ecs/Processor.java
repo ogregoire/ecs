@@ -21,11 +21,8 @@ package be.fror.ecs;
  */
 public abstract class Processor {
 
-  @Inject
-  private Engine engine;
-
   protected final Engine getEngine() {
-    return engine;
+    return null;
   }
 
   final void doProcess() {

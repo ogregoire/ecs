@@ -22,7 +22,6 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- *
  * @author Olivier Grégoire
  */
 @Documented
@@ -30,9 +29,9 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 public @interface Aspect {
 
-  Class<? extends Component>[] allOf();
+  Class<? extends Component>[] allOf() default {};
 
-  Class<? extends Component>[] noneOf();
+  Class<? extends Component>[] noneOf() default {};
   
-  Class<? extends Component>[] anyOf();
+  Class<? extends Component>[] anyOf() default {};
 }

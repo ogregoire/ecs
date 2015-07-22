@@ -13,27 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package be.fror.ecs.example;
-
-import be.fror.ecs.Engine;
-import be.fror.ecs.Processor;
+package be.fror.ecs;
 
 /**
  *
  * @author Olivier Grégoire
+ * @param <C>
  */
-public class Example {
-  public static void main(String[] args) {
-    new Engine.Builder()
-        .addProcessor(new ExampleProcessor())
-        .build()
-        .process();
+public class ComponentMapper<C extends Component> {
+
+  final Engine engine;
+  final int componentId;
+
+  ComponentMapper(Engine engine, int componentId) {
+    this.engine = engine;
+    this.componentId = componentId;
   }
-  
-  static class ExampleProcessor extends Processor {
-    @Override
-    protected void process() {
-      System.out.println(getEngine());
-    }
+
+  public C get(Entity entity) {
+    return (C) engine.components[componentId][entity.id];
   }
 }

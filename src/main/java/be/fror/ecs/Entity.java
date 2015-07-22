@@ -15,32 +15,34 @@
  */
 package be.fror.ecs;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  *
  * @author Olivier Grégoire
  */
 public final class Entity {
 
-  private final Map<Class<? extends Component>, Component> components = new HashMap<>();
+  final Engine engine;
+  final int id;
 
-  Entity() {
-
+  Entity(Engine engine, int id) {
+    this.engine = engine;
+    this.id = id;
   }
 
   public Entity set(Component component) {
-    components.put(component.getClass(), component);
+
     return this;
   }
 
-  public boolean has(Class<? extends Component> type) {
-    return components.containsKey(type);
+  public <C extends Component> Entity set(Class<C> type, C component) {
+    if (type == null) {
+      throw new NullPointerException();
+    }
+    return this;
   }
 
-  @SuppressWarnings("unchecked")
-  public <T extends Component> T get(Class<T> type) {
-    return (T) components.get(type);
+  public Entity remove(Class<?> type) {
+
+    return this;
   }
 }
