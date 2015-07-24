@@ -15,6 +15,8 @@
  */
 package be.fror.ecs.example;
 
+import be.fror.ecs.Component;
+import be.fror.ecs.ComponentMapper;
 import be.fror.ecs.Engine;
 import be.fror.ecs.Processor;
 
@@ -31,9 +33,17 @@ public class Example {
   }
   
   static class ExampleProcessor extends Processor {
+    
+    private ComponentMapper<ExampleComponent> cm;
+    private ComponentMapper<? extends ExampleComponent> cm2;
+    
     @Override
     protected void process() {
       System.out.println(getEngine());
     }
+  }
+  
+  static class ExampleComponent extends Component {
+    
   }
 }
