@@ -35,7 +35,6 @@ public class Example {
   static class ExampleProcessor extends Processor {
     
     private ComponentMapper<ExampleComponent> cm;
-    private ComponentMapper<? extends ExampleComponent> cm2;
     
     @Override
     protected void process() {
