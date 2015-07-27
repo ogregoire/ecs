@@ -15,16 +15,7 @@
  */
 package be.fror.ecs;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
-import be.fror.ecs.tool.Reflection;
-
-import java.lang.reflect.Field;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.util.Arrays;
-import java.util.LinkedHashSet;
-import java.util.Set;
 
 /**
  *
@@ -34,8 +25,8 @@ public final class Engine {
 
   final Component[][] components;
 
-  Engine(Builder builder) {
-    components = new Component[10][32];
+  Engine(EngineBuilder builder) {
+    components = new Component[builder.componentTypes.size()][32];
   }
 
   public void process() {
@@ -49,49 +40,4 @@ public final class Engine {
     comps[entityId] = component;
   }
 
-  public static class Builder {
-
-    private final Set<Class<? extends Component>> componentTypes = new LinkedHashSet<>();
-    
-    public Builder addProcessor(Processor processor) {
-      checkNotNull(processor, "processor must not be null");
-      collectComponents(processor);
-      
-      return this;
-    }
-
-    public Builder addTool(Object injectable) {
-      checkNotNull(injectable, "injectable must not be null");
-      collectComponents(injectable);
-      
-      return this;
-    }
-
-    void collectComponents(Object o) {
-      Reflection.lineage(o.getClass())
-          .forEach((c) -> {
-            for (Field f: c.getDeclaredFields()) {
-              Type type = f.getGenericType();
-              if (!(type instanceof ParameterizedType)) {
-                continue;
-              }
-              ParameterizedType pType = (ParameterizedType)type;
-              if (pType.getRawType() != ComponentMapper.class) {
-                continue;
-              }
-              // length is 1.
-              Type argType = pType.getActualTypeArguments()[0];
-              if (!(argType instanceof Class)) {
-                continue;
-              }
-              Class<? extends Component> argClass = (Class<? extends Component>)argType;
-              componentTypes.add(argClass);
-            }
-          });
-    }
-    
-    public Engine build() {
-      return new Engine(this);
-    }
-  }
 }
