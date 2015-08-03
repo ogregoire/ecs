@@ -35,14 +35,9 @@ public final class Entity {
   }
 
   public <C extends Component> Entity set(Class<C> type, C component) {
-    if (type == null) {
+    if (type == null || component == null) {
       throw new NullPointerException();
     }
-    return this;
-  }
-
-  public Entity remove(Class<?> type) {
-
     return this;
   }
 }

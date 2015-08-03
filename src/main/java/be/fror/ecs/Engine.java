@@ -25,6 +25,7 @@ import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  *
@@ -35,7 +36,7 @@ public final class Engine {
   final Component[][] components;
 
   Engine(Builder builder) {
-    components = new Component[10][32];
+    components = new Component[builder.componentTypes.size()][32];
   }
 
   public void process() {
@@ -52,44 +53,33 @@ public final class Engine {
   public static class Builder {
 
     private final Set<Class<? extends Component>> componentTypes = new LinkedHashSet<>();
-    
+
     public Builder addProcessor(Processor processor) {
       checkNotNull(processor, "processor must not be null");
-      collectComponents(processor);
-      
+      collectComponents(processor).forEach(componentTypes::add);
+
       return this;
     }
 
     public Builder addTool(Object injectable) {
       checkNotNull(injectable, "injectable must not be null");
-      collectComponents(injectable);
-      
+      collectComponents(injectable).forEach(componentTypes::add);
+
       return this;
     }
 
-    void collectComponents(Object o) {
-      Reflection.lineage(o.getClass())
-          .forEach((c) -> {
-            for (Field f: c.getDeclaredFields()) {
-              Type type = f.getGenericType();
-              if (!(type instanceof ParameterizedType)) {
-                continue;
-              }
-              ParameterizedType pType = (ParameterizedType)type;
-              if (pType.getRawType() != ComponentMapper.class) {
-                continue;
-              }
-              // length is 1.
-              Type argType = pType.getActualTypeArguments()[0];
-              if (!(argType instanceof Class)) {
-                continue;
-              }
-              Class<? extends Component> argClass = (Class<? extends Component>)argType;
-              componentTypes.add(argClass);
-            }
-          });
+    static Stream<Class<? extends Component>> collectComponents(Object o) {
+      return Reflection.lineage(o.getClass())
+          .flatMap(c -> Arrays.stream(c.getDeclaredFields()))
+          .map(Field::getGenericType)
+          .filter(t -> t instanceof ParameterizedType)
+          .map(t -> (ParameterizedType) t)
+          .filter(t -> t.getRawType() == ComponentMapper.class)
+          .map(t -> t.getActualTypeArguments()[0])
+          .filter(t -> t instanceof Class)
+          .map(t -> (Class<? extends Component>) t);
     }
-    
+
     public Engine build() {
       return new Engine(this);
     }

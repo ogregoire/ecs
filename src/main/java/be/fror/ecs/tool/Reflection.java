@@ -62,7 +62,7 @@ public class Reflection {
   }
 
   public static <T extends AnnotatedElement> Predicate<T> isAnnotationPresent(Class<? extends Annotation> annotationClass) {
-    return (a) -> a.isAnnotationPresent(annotationClass);
+    return a -> a.isAnnotationPresent(annotationClass);
   }
   
   public static Stream<Field> getDeclaredFields(Class<?> type) {
