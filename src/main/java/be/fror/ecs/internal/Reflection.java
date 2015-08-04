@@ -13,19 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package be.fror.ecs.tool;
-
-import be.fror.ecs.Inject;
+package be.fror.ecs.internal;
 
 import static java.util.Spliterators.spliteratorUnknownSize;
 import static java.util.stream.StreamSupport.stream;
+
+import be.fror.ecs.Component;
+import be.fror.ecs.ComponentMapper;
 
 import com.google.common.collect.AbstractIterator;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -64,8 +68,23 @@ public class Reflection {
   public static <T extends AnnotatedElement> Predicate<T> isAnnotationPresent(Class<? extends Annotation> annotationClass) {
     return a -> a.isAnnotationPresent(annotationClass);
   }
-  
+
   public static Stream<Field> getDeclaredFields(Class<?> type) {
     return Arrays.stream(type.getDeclaredFields());
+  }
+
+  public static Optional<Class<? extends Component>> extractComponentType(Field field) {
+    if (field.getType() != ComponentMapper.class) {
+      return Optional.empty();
+    }
+    Type fieldGenericType = field.getGenericType();
+    if (!(fieldGenericType instanceof ParameterizedType)) {
+      return Optional.empty();
+    }
+    Type fieldArgumentType = ((ParameterizedType) fieldGenericType).getActualTypeArguments()[0];
+    if (!(fieldArgumentType instanceof Class)) {
+      return Optional.empty();
+    }
+    return Optional.of((Class<? extends Component>) fieldArgumentType);
   }
 }

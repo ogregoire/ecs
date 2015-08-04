@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package be.fror.ecs.tool;
+package be.fror.ecs.internal;
 
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;

@@ -15,14 +15,17 @@
  */
 package be.fror.ecs;
 
+import be.fror.ecs.internal.Reflection;
+
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import be.fror.ecs.tool.Reflection;
+import com.google.common.collect.ImmutableMap;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.ParameterizedType;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -33,12 +36,25 @@ import java.util.stream.Stream;
 public final class Engine {
 
   final Component[][] components;
+  final Processor[] processors;
+  final ImmutableMap<Class<? extends Component>, ComponentMapper<?>> componentMappers;
 
   Engine(Builder builder) {
     components = new Component[builder.componentTypes.size()][32];
+    processors = builder.processors.toArray(new Processor[0]);
+    ImmutableMap.Builder<Class<? extends Component>, ComponentMapper<?>> componentMappersBuilder = ImmutableMap.builder();
+    int i = 0;
+    for (Class<? extends Component> c : builder.componentTypes) {
+      componentMappersBuilder.put(c, new ComponentMapper(this, i));
+      i++;
+    }
+    this.componentMappers = componentMappersBuilder.build();
   }
 
   public void process() {
+    for (int i = 0; i < processors.length; i++) {
+      processors[i].doProcess();
+    }
   }
 
   void setComponent(int componentId, int entityId, Component component) {
@@ -52,35 +68,39 @@ public final class Engine {
   public static class Builder {
 
     private final Set<Class<? extends Component>> componentTypes = new LinkedHashSet<>();
+    private final List<Processor> processors = new ArrayList<>();
+    private final Injector injector = new Injector();
 
-    public Builder addProcessor(Processor processor) {
+    public Builder add(Processor processor) {
       checkNotNull(processor, "processor must not be null");
-      collectComponents(processor).forEach(componentTypes::add);
+      collectComponentTypes(processor).forEach(componentTypes::add);
+      processors.add(processor);
+      injector.register(processor);
 
       return this;
     }
 
-    public Builder addTool(Object injectable) {
+    public Builder add(Object injectable) {
       checkNotNull(injectable, "injectable must not be null");
-      collectComponents(injectable).forEach(componentTypes::add);
+      collectComponentTypes(injectable).forEach(componentTypes::add);
+      injector.register(injectable);
 
       return this;
     }
 
-    static Stream<Class<? extends Component>> collectComponents(Object o) {
+    static Stream<Class<? extends Component>> collectComponentTypes(Object o) {
       return Reflection.lineage(o.getClass())
-          .flatMap(c -> Arrays.stream(c.getDeclaredFields()))
-          .map(Field::getGenericType)
-          .filter(t -> t instanceof ParameterizedType)
-          .map(t -> (ParameterizedType) t)
-          .filter(t -> t.getRawType() == ComponentMapper.class)
-          .map(t -> t.getActualTypeArguments()[0])
-          .filter(t -> t instanceof Class)
-          .map(t -> (Class<? extends Component>) t);
+          .flatMap(Reflection::getDeclaredFields)
+          .map(Reflection::extractComponentType)
+          .filter(Optional::isPresent)
+          .map(Optional::get);
     }
 
     public Engine build() {
-      return new Engine(this);
+      Engine engine = new Engine(this);
+      injector.register(engine);
+      injector.inject();
+      return engine;
     }
   }
 }
