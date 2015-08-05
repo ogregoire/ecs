@@ -15,18 +15,29 @@
  */
 package be.fror.ecs;
 
+import com.google.common.collect.ImmutableMap;
+
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  *
  * @author Olivier Grégoire
  */
 class Injector {
 
-  void register(Object object) {
-
-  }
+  private final Map<Class<?>, Object> bindings = new HashMap<>();
+  ImmutableMap<Class<?>, ComponentMapper<?>> componentMappers;
 
   void inject() {
-
+    
   }
 
+  void register(Class<?> key, Object injectable) {
+    if (bindings.containsKey(key)) {
+      throw new RuntimeException(String.format("key (%s) is already registered", key.getName()));
+    }
+    bindings.put(key, injectable);
+  }
+  
 }

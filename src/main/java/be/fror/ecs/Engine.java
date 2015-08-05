@@ -15,19 +15,10 @@
  */
 package be.fror.ecs;
 
-import be.fror.ecs.internal.Reflection;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.collect.ImmutableMap;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Stream;
 
 /**
  *
@@ -37,18 +28,12 @@ public final class Engine {
 
   final Component[][] components;
   final Processor[] processors;
-  final ImmutableMap<Class<? extends Component>, ComponentMapper<?>> componentMappers;
+  final ImmutableMap<Class<?>, ComponentMapper<?>> componentMappers;
 
-  Engine(Builder builder) {
+  Engine(EngineBuilder builder) {
     components = new Component[builder.componentTypes.size()][32];
     processors = builder.processors.toArray(new Processor[0]);
-    ImmutableMap.Builder<Class<? extends Component>, ComponentMapper<?>> componentMappersBuilder = ImmutableMap.builder();
-    int i = 0;
-    for (Class<? extends Component> c : builder.componentTypes) {
-      componentMappersBuilder.put(c, new ComponentMapper(this, i));
-      i++;
-    }
-    this.componentMappers = componentMappersBuilder.build();
+    this.componentMappers = builder.buildComponentMappers(this);
   }
 
   public void process() {
@@ -58,49 +43,12 @@ public final class Engine {
   }
 
   void setComponent(int componentId, int entityId, Component component) {
-    Component[] comps = components[componentId];
-    if (comps.length <= entityId) {
-      components[componentId] = comps = Arrays.copyOf(comps, Integer.highestOneBit(entityId) << 1);
+    Component[] c = components[componentId];
+    if (c.length <= entityId) {
+      components[componentId] = c = Arrays.copyOf(c, Integer.highestOneBit(entityId) << 1);
     }
-    comps[entityId] = component;
+    c[entityId] = component;
   }
 
-  public static class Builder {
-
-    private final Set<Class<? extends Component>> componentTypes = new LinkedHashSet<>();
-    private final List<Processor> processors = new ArrayList<>();
-    private final Injector injector = new Injector();
-
-    public Builder add(Processor processor) {
-      checkNotNull(processor, "processor must not be null");
-      collectComponentTypes(processor).forEach(componentTypes::add);
-      processors.add(processor);
-      injector.register(processor);
-
-      return this;
-    }
-
-    public Builder add(Object injectable) {
-      checkNotNull(injectable, "injectable must not be null");
-      collectComponentTypes(injectable).forEach(componentTypes::add);
-      injector.register(injectable);
-
-      return this;
-    }
-
-    static Stream<Class<? extends Component>> collectComponentTypes(Object o) {
-      return Reflection.lineage(o.getClass())
-          .flatMap(Reflection::getDeclaredFields)
-          .map(Reflection::extractComponentType)
-          .filter(Optional::isPresent)
-          .map(Optional::get);
-    }
-
-    public Engine build() {
-      Engine engine = new Engine(this);
-      injector.register(engine);
-      injector.inject();
-      return engine;
-    }
-  }
+  
 }

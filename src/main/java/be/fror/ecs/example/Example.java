@@ -17,7 +17,7 @@ package be.fror.ecs.example;
 
 import be.fror.ecs.Component;
 import be.fror.ecs.ComponentMapper;
-import be.fror.ecs.Engine;
+import be.fror.ecs.EngineBuilder;
 import be.fror.ecs.Processor;
 
 /**
@@ -26,8 +26,8 @@ import be.fror.ecs.Processor;
  */
 public class Example {
   public static void main(String[] args) {
-    new Engine.Builder()
-        .add(new ExampleProcessor())
+    new EngineBuilder()
+        .bind(new ExampleProcessor())
         .build()
         .process();
   }
