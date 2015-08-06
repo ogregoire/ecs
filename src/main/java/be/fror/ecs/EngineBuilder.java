@@ -15,9 +15,11 @@
  */
 package be.fror.ecs;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import be.fror.ecs.internal.Reflection;
 
-import static com.google.common.base.Preconditions.*;
 import com.google.common.collect.ImmutableMap;
 
 import java.lang.reflect.Type;
@@ -74,12 +76,20 @@ public final class EngineBuilder {
     componentTypes.addAll(ct);
   }
 
-  static Stream<Class<? extends Component>> collectComponentTypes(Object o) {
+  private static Stream<Class<? extends Component>> collectComponentTypes(Object o) {
     return Reflection.lineage(o.getClass())
         .flatMap(Reflection::getDeclaredFields)
         .map(Reflection::extractComponentType)
         .filter(Optional::isPresent)
         .map(Optional::get);
+  }
+
+  public Engine build() {
+    Engine engine = new Engine(this);
+    injector.register(Engine.class, engine);
+    injector.componentMappers = buildComponentMappers(engine);
+    injector.inject();
+    return engine;
   }
 
   private ImmutableMap<Type, ComponentMapper<?>> buildComponentMappers(Engine engine) {
@@ -90,14 +100,6 @@ public final class EngineBuilder {
       i++;
     }
     return componentMappersBuilder.build();
-  }
-
-  public Engine build() {
-    Engine engine = new Engine(this);
-    injector.register(Engine.class, engine);
-    injector.componentMappers = buildComponentMappers(engine);
-    injector.inject();
-    return engine;
   }
 
 }
