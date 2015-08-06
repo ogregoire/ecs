@@ -23,7 +23,6 @@ import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -74,7 +73,11 @@ public final class EngineBuilder {
   }
 
   static Stream<Class<? extends Component>> collectComponentTypes(Object o) {
-    return Reflection.lineage(o.getClass()).flatMap(Reflection::getDeclaredFields).map(Reflection::extractComponentType).filter(Optional::isPresent).map(Optional::get);
+    return Reflection.lineage(o.getClass())
+        .flatMap(Reflection::getDeclaredFields)
+        .map(Reflection::extractComponentType)
+        .filter(Optional::isPresent)
+        .map(Optional::get);
   }
 
   ImmutableMap<Class<?>, ComponentMapper<?>> buildComponentMappers(Engine engine) {
@@ -90,7 +93,7 @@ public final class EngineBuilder {
   public Engine build() {
     Engine engine = new Engine(this);
     injector.register(Engine.class, engine);
-    injector.componentMappers = engine.componentMappers;
+    injector.componentMappers = buildComponentMappers(engine);
     injector.inject();
     return engine;
   }

@@ -20,7 +20,7 @@ package be.fror.ecs;
  * @author Olivier Grégoire
  * @param <C>
  */
-public class ComponentMapper<C extends Component> {
+public final class ComponentMapper<C extends Component> {
 
   final Engine engine;
   final int componentId;

@@ -28,12 +28,10 @@ public final class Engine {
 
   final Component[][] components;
   final Processor[] processors;
-  final ImmutableMap<Class<?>, ComponentMapper<?>> componentMappers;
 
   Engine(EngineBuilder builder) {
     components = new Component[builder.componentTypes.size()][32];
     processors = builder.processors.toArray(new Processor[0]);
-    this.componentMappers = builder.buildComponentMappers(this);
   }
 
   public void process() {

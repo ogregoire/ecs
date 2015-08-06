@@ -26,6 +26,7 @@ import com.google.common.collect.AbstractIterator;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Arrays;
@@ -73,6 +74,12 @@ public class Reflection {
     return Arrays.stream(type.getDeclaredFields());
   }
 
+  public static boolean isNonFinalInstanceField(Field field) {
+    int modifiers = field.getModifiers();
+    return !Modifier.isFinal(modifiers)
+        && !Modifier.isStatic(modifiers);
+  }
+  
   public static Optional<Class<? extends Component>> extractComponentType(Field field) {
     if (field.getType() != ComponentMapper.class) {
       return Optional.empty();

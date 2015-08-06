@@ -21,8 +21,10 @@ package be.fror.ecs;
  */
 public abstract class Processor {
 
+  private Engine engine;
+
   protected final Engine getEngine() {
-    return null;
+    return engine;
   }
 
   final void doProcess() {

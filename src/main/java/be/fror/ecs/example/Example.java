@@ -25,26 +25,25 @@ import be.fror.ecs.Processor;
  * @author Olivier Grégoire
  */
 public class Example {
+
   public static void main(String[] args) {
     new EngineBuilder()
         .bind(new ExampleProcessor())
         .build()
         .process();
   }
-  
+
   static class ExampleProcessor extends Processor {
-    
+
     private ComponentMapper<ExampleComponent> cm;
-    private ComponentMapper<? extends ExampleComponent> cm2;
-    private ComponentMapper cm3;
-    
+
     @Override
     protected void process() {
       System.out.println(getEngine());
+      System.out.println(cm);
     }
   }
-  
+
   static class ExampleComponent extends Component {
-    
   }
 }

@@ -15,10 +15,16 @@
  */
 package be.fror.ecs;
 
+import be.fror.ecs.internal.Reflection;
+
 import com.google.common.collect.ImmutableMap;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Stream;
 
 /**
  *
@@ -30,7 +36,33 @@ class Injector {
   ImmutableMap<Class<?>, ComponentMapper<?>> componentMappers;
 
   void inject() {
-    
+    for (Object object : bindings.values()) {
+      collectFields(object).forEach((field) -> {
+        Type type = field.getType();
+        Object value = null;
+        if (bindings.containsKey(type)) {
+          value = bindings.get(type);
+        } else if (type == ComponentMapper.class && field.getGenericType() instanceof ParameterizedType) {
+          ParameterizedType parameterizedType = (ParameterizedType) field.getGenericType();
+          Type t = parameterizedType.getActualTypeArguments()[0];
+          value = componentMappers.get(t);
+        }
+        if (value != null) {
+          try {
+            field.setAccessible(true);
+            field.set(object, value);
+          } catch (IllegalArgumentException | IllegalAccessException ex) {
+            throw new RuntimeException("Cannot write field " + field, ex);
+          }
+        }
+      });
+    }
+  }
+
+  private static Stream<Field> collectFields(Object o) {
+    return Reflection.lineage(o.getClass())
+        .flatMap(Reflection::getDeclaredFields)
+        .filter(Reflection::isNonFinalInstanceField);
   }
 
   void register(Class<?> key, Object injectable) {
@@ -39,5 +71,5 @@ class Injector {
     }
     bindings.put(key, injectable);
   }
-  
+
 }
