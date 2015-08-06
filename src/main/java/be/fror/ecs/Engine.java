@@ -15,9 +15,6 @@
  */
 package be.fror.ecs;
 
-
-import com.google.common.collect.ImmutableMap;
-
 import java.util.Arrays;
 
 /**
@@ -48,5 +45,4 @@ public final class Engine {
     c[entityId] = component;
   }
 
-  
 }

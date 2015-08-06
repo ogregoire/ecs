@@ -17,9 +17,10 @@ package be.fror.ecs;
 
 import be.fror.ecs.internal.Reflection;
 
-import com.google.common.base.Preconditions;
+import static com.google.common.base.Preconditions.*;
 import com.google.common.collect.ImmutableMap;
 
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -39,34 +40,35 @@ public final class EngineBuilder {
   private final Injector injector = new Injector();
 
   public EngineBuilder bind(Processor processor) {
-    Preconditions.checkNotNull(processor, "processor must not be null");
+    checkNotNull(processor, "processor must not be null");
     doBind(processor.getClass(), processor);
     processors.add(processor);
     return this;
   }
 
   public <P extends Processor> EngineBuilder bind(Class<P> key, P processor) {
-    Preconditions.checkNotNull(key, "key must not be null");
-    Preconditions.checkNotNull(processor, "processor must not be null");
+    checkNotNull(key, "key must not be null");
+    checkNotNull(processor, "processor must not be null");
     doBind(key, processor);
     processors.add(processor);
     return this;
   }
 
   public EngineBuilder bind(Object injectable) {
-    Preconditions.checkNotNull(injectable, "injectable must not be null");
+    checkNotNull(injectable, "injectable must not be null");
     doBind(injectable.getClass(), injectable);
     return this;
   }
 
   public <T> EngineBuilder bind(Class<T> key, T injectable) {
-    Preconditions.checkNotNull(key, "key must not be null");
-    Preconditions.checkNotNull(injectable, "injectable must not be null");
+    checkNotNull(key, "key must not be null");
+    checkNotNull(injectable, "injectable must not be null");
     doBind(key, injectable);
     return this;
   }
 
   private void doBind(Class<?> key, Object injectable) {
+    checkArgument(key != ComponentMapper.class && key != Engine.class, "%s may not be bound", key);
     List<Class<? extends Component>> ct = collectComponentTypes(injectable).collect(Collectors.toList());
     injector.register(key, injectable);
     componentTypes.addAll(ct);
@@ -80,8 +82,8 @@ public final class EngineBuilder {
         .map(Optional::get);
   }
 
-  ImmutableMap<Class<?>, ComponentMapper<?>> buildComponentMappers(Engine engine) {
-    ImmutableMap.Builder<Class<?>, ComponentMapper<?>> componentMappersBuilder = ImmutableMap.builder();
+  private ImmutableMap<Type, ComponentMapper<?>> buildComponentMappers(Engine engine) {
+    ImmutableMap.Builder<Type, ComponentMapper<?>> componentMappersBuilder = ImmutableMap.builder();
     int i = 0;
     for (Class<? extends Component> c : componentTypes) {
       componentMappersBuilder.put(c, new ComponentMapper(engine, i));

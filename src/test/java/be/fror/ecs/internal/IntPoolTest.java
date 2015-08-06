@@ -15,8 +15,6 @@
  */
 package be.fror.ecs.internal;
 
-import be.fror.ecs.internal.IntPool;
-
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
@@ -52,22 +50,22 @@ public class IntPoolTest {
   }
 
   /**
-   * Test of ofIncrementingValues method, of class IntPool.
+   * Test of incrementing method, of class IntPool.
    */
   @Test
-  public void testOfIncrementingValues_0args() {
-    IntPool pool = IntPool.ofIncrementingValues();
+  public void testIncrementing() {
+    IntPool pool = IntPool.incrementing();
     assertThat(pool.lease(), is(0));
     assertThat(pool.lease(), is(1));
     assertThat(pool.lease(), is(2));
   }
 
   /**
-   * Test of ofIncrementingValues method, of class IntPool.
+   * Test of incrementingStartingAt method, of class IntPool.
    */
   @Test
-  public void testOfIncrementingValues_int() {
-    IntPool pool = IntPool.ofIncrementingValues(5);
+  public void testIncrementingStartingAt_int() {
+    IntPool pool = IntPool.incrementingStartingAt(5);
     assertThat(pool.lease(), is(5));
     assertThat(pool.lease(), is(6));
     assertThat(pool.lease(), is(7));
@@ -94,4 +92,10 @@ public class IntPoolTest {
   public void testRelease() {
   }
 
+  /**
+   * Test of lease method, of class IntPool.
+   */
+  @Test
+  public void testLease_IntConsumer() {
+  }
 }

@@ -32,30 +32,34 @@ import java.util.stream.Stream;
  */
 class Injector {
 
-  private final Map<Class<?>, Object> bindings = new HashMap<>();
-  ImmutableMap<Class<?>, ComponentMapper<?>> componentMappers;
+  private final Map<Type, Object> bindings = new HashMap<>();
+  ImmutableMap<Type, ComponentMapper<?>> componentMappers;
 
   void inject() {
     for (Object object : bindings.values()) {
-      collectFields(object).forEach((field) -> {
-        Type type = field.getType();
-        Object value = null;
-        if (bindings.containsKey(type)) {
-          value = bindings.get(type);
-        } else if (type == ComponentMapper.class && field.getGenericType() instanceof ParameterizedType) {
-          ParameterizedType parameterizedType = (ParameterizedType) field.getGenericType();
-          Type t = parameterizedType.getActualTypeArguments()[0];
-          value = componentMappers.get(t);
-        }
-        if (value != null) {
-          try {
-            field.setAccessible(true);
-            field.set(object, value);
-          } catch (IllegalArgumentException | IllegalAccessException ex) {
-            throw new RuntimeException("Cannot write field " + field, ex);
-          }
-        }
-      });
+      collectFields(object).forEach(field -> inject(object, field));
+    }
+  }
+
+  private void inject(Object instance, Field field) {
+    Type type = field.getType();
+    Object value = null;
+    if (bindings.containsKey(type)) {
+      // Processors, tools, etc.
+      value = bindings.get(type);
+    } else if (type == ComponentMapper.class && field.getGenericType() instanceof ParameterizedType) {
+      // ComponentMapper<MyComponent>
+      ParameterizedType parameterizedType = (ParameterizedType) field.getGenericType();
+      Type t = parameterizedType.getActualTypeArguments()[0];
+      value = componentMappers.get(t);
+    }
+    if (value != null) {
+      try {
+        field.setAccessible(true);
+        field.set(instance, value);
+      } catch (IllegalArgumentException | IllegalAccessException ex) {
+        throw new RuntimeException("Cannot write field " + field, ex);
+      }
     }
   }
 

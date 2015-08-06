@@ -79,7 +79,8 @@ public class Reflection {
     return !Modifier.isFinal(modifiers)
         && !Modifier.isStatic(modifiers);
   }
-  
+
+  @SuppressWarnings("unchecked")
   public static Optional<Class<? extends Component>> extractComponentType(Field field) {
     if (field.getType() != ComponentMapper.class) {
       return Optional.empty();

@@ -17,6 +17,7 @@ package be.fror.ecs.internal;
 
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.IntConsumer;
 import java.util.function.IntSupplier;
 
 /**
@@ -25,11 +26,11 @@ import java.util.function.IntSupplier;
  */
 public final class IntPool {
 
-  public static IntPool ofIncrementingValues() {
-    return ofIncrementingValues(0);
+  public static IntPool incrementing() {
+    return incrementingStartingAt(0);
   }
 
-  public static IntPool ofIncrementingValues(final int startingValue) {
+  public static IntPool incrementingStartingAt(final int startingValue) {
     return new IntPool(new AtomicInteger(startingValue)::getAndIncrement);
   }
 
@@ -66,4 +67,13 @@ public final class IntPool {
     pool[poolSize++] = value;
   }
 
+  public void lease(IntConsumer consumer) {
+    int value = lease();
+    try {
+      consumer.accept(value);
+    } finally {
+      release(value);
+    }
+  }
+  
 }

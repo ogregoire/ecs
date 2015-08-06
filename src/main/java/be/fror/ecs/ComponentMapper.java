@@ -30,6 +30,7 @@ public final class ComponentMapper<C extends Component> {
     this.componentId = componentId;
   }
 
+  @SuppressWarnings("unchecked")
   public C get(Entity entity) {
     return (C) engine.components[componentId][entity.id];
   }
