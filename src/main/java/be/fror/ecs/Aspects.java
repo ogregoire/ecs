@@ -15,24 +15,21 @@
  */
 package be.fror.ecs;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import be.fror.ecs._internal.Reflection;
-
-import com.google.common.collect.ImmutableSet;
 
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Predicate;
 
 /**
  *
  * @author Olivier Grégoire
  */
-class ConcreteAspect {
+class Aspects {
 
-  static ConcreteAspect createFrom(Object object) {
+  static Predicate<Entity> asEntityPredicate(Object object) {
     Set<Class<? extends Component>> all = new LinkedHashSet<>();
     Set<Class<? extends Component>> any = new LinkedHashSet<>();
     Set<Class<? extends Component>> none = new LinkedHashSet<>();
@@ -41,28 +38,17 @@ class ConcreteAspect {
         .filter(type -> type.isAnnotationPresent(Aspect.class))
         .map(type -> type.getAnnotation(Aspect.class))
         .forEach(aspect -> {
-          empty.set(false);
-          all.addAll(Arrays.asList(aspect.allOf()));
-          any.addAll(Arrays.asList(aspect.anyOf()));
-          none.addAll(Arrays.asList(aspect.noneOf()));
+          if (all.addAll(Arrays.asList(aspect.allOf())) | any.addAll(Arrays.asList(aspect.anyOf())) | none.addAll(Arrays.asList(aspect.noneOf()))) {
+            empty.set(false);
+          }
         });
     if (empty.get()) {
-      
+      return (e) -> true;
     }
-    checkArgument(!all.removeAll(any) && !all.removeAll(none) && !any.removeAll(none), "@Aspect's all, any and none overlap");
-    return new ConcreteAspect(all, any, none);
-  }
-
-  final ImmutableSet<Class<? extends Component>> all;
-  final ImmutableSet<Class<? extends Component>> any;
-  final ImmutableSet<Class<? extends Component>> none;
-
-  ConcreteAspect(
-      Set<Class<? extends Component>> all,
-      Set<Class<? extends Component>> any,
-      Set<Class<? extends Component>> none) {
-    this.all = ImmutableSet.copyOf(all);
-    this.any = ImmutableSet.copyOf(any);
-    this.none = ImmutableSet.copyOf(none);
+    if (all.removeAll(any) || all.removeAll(none) || any.removeAll(none)) {
+      throw new IllegalArgumentException("@Aspect's all, any and none overlap");
+    }
+    // TODO finish
+    return null;
   }
 }

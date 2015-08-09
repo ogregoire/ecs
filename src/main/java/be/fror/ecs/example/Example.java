@@ -28,7 +28,7 @@ public class Example {
 
   public static void main(String[] args) {
     new EngineBuilder()
-        .bind(new ExampleProcessor())
+        .bindProcessor(new ExampleProcessor())
         .build()
         .process();
   }

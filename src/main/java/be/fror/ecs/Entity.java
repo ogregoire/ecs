@@ -15,6 +15,8 @@
  */
 package be.fror.ecs;
 
+import java.util.Objects;
+
 /**
  *
  * @author Olivier Grégoire
@@ -29,15 +31,17 @@ public final class Entity {
     this.id = id;
   }
 
-  public Entity set(Component component) {
-
-    return this;
+  @Override
+  public boolean equals(Object obj) {
+    if (obj != null && getClass() == obj.getClass()) {
+      Entity other = (Entity) obj;
+      return id == other.id && engine == other.engine;
+    }
+    return false;
   }
 
-  public <C extends Component> Entity set(Class<C> type, C component) {
-    if (type == null || component == null) {
-      throw new NullPointerException();
-    }
-    return this;
+  @Override
+  public int hashCode() {
+    return Objects.hash(engine, id);
   }
 }

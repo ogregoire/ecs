@@ -18,11 +18,8 @@ package be.fror.ecs;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import be.fror.ecs.internal.Reflection;
+import be.fror.ecs._internal.Reflection;
 
-import com.google.common.collect.ImmutableMap;
-
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -41,18 +38,24 @@ public final class EngineBuilder {
   final List<Processor> processors = new ArrayList<>();
   private final Injector injector = new Injector();
 
-  public EngineBuilder bind(Processor processor) {
+  public EngineBuilder bindProcessor(Processor processor) {
     checkNotNull(processor, "processor must not be null");
     doBind(processor.getClass(), processor);
     processors.add(processor);
     return this;
   }
 
-  public <P extends Processor> EngineBuilder bind(Class<P> key, P processor) {
+  public <P extends Processor> EngineBuilder bindProcessor(Class<P> key, P processor) {
     checkNotNull(key, "key must not be null");
     checkNotNull(processor, "processor must not be null");
     doBind(key, processor);
     processors.add(processor);
+    return this;
+  }
+
+  public EngineBuilder bindFactory(Class<?> type) {
+    checkNotNull(type, "type must not be null");
+    
     return this;
   }
 
@@ -87,19 +90,8 @@ public final class EngineBuilder {
   public Engine build() {
     Engine engine = new Engine(this);
     injector.register(Engine.class, engine);
-    injector.componentMappers = buildComponentMappers(engine);
+    injector.componentMappers = engine.componentMappers;
     injector.inject();
     return engine;
   }
-
-  private ImmutableMap<Type, ComponentMapper<?>> buildComponentMappers(Engine engine) {
-    ImmutableMap.Builder<Type, ComponentMapper<?>> componentMappersBuilder = ImmutableMap.builder();
-    int i = 0;
-    for (Class<? extends Component> c : componentTypes) {
-      componentMappersBuilder.put(c, new ComponentMapper(engine, i));
-      i++;
-    }
-    return componentMappersBuilder.build();
-  }
-
 }

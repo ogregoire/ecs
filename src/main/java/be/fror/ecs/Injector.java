@@ -15,7 +15,7 @@
  */
 package be.fror.ecs;
 
-import be.fror.ecs.internal.Reflection;
+import be.fror.ecs._internal.Reflection;
 
 import com.google.common.collect.ImmutableMap;
 

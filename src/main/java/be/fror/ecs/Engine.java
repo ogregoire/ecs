@@ -15,7 +15,11 @@
  */
 package be.fror.ecs;
 
+import com.google.common.collect.ImmutableMap;
+
+import java.lang.reflect.Type;
 import java.util.Arrays;
+import java.util.Set;
 
 /**
  *
@@ -25,10 +29,20 @@ public final class Engine {
 
   final Component[][] components;
   final Processor[] processors;
+  final ImmutableMap<Type, ComponentMapper<?>> componentMappers;
 
   Engine(EngineBuilder builder) {
     components = new Component[builder.componentTypes.size()][32];
     processors = builder.processors.toArray(new Processor[0]);
+    {
+      ImmutableMap.Builder<Type, ComponentMapper<?>> componentMappersBuilder = ImmutableMap.builder();
+      int i = 0;
+      for (Type c : builder.componentTypes) {
+        componentMappersBuilder.put(c, new ComponentMapper(this, i));
+        i++;
+      }
+      componentMappers = componentMappersBuilder.build();
+    }
   }
 
   public void process() {
